@@ -17,16 +17,16 @@ DNS_FEATURES = ['Entropy', 'DomainLength', 'StrangeCharacters', 'SpecialCharRati
 model = joblib.load(MODEL_PATH)
 
 def detect_dns_anomaly(event: dict):
-    """
-    event: dict with keys: 'Entropy', 'DomainLength', 'StrangeCharacters', 'SpecialCharRatio'
-    """
     arr = np.array([[event[f] for f in DNS_FEATURES]])
     pred = model.predict(arr)[0]
     score = float(model.decision_function(arr)[0])
-    is_anomaly = (pred == -1)
-    return {'is_anomaly': is_anomaly, 'anomaly_score': score}
+    # Convert numpy.bool_ to regular bool
+    is_anomaly = bool(pred == -1)
+    return {
+        'is_anomaly': is_anomaly,
+        'anomaly_score': score
+    }
 
-# ==========================
 
 app.add_middleware(
     CORSMiddleware,
@@ -104,34 +104,31 @@ def get_simple_apps():
     try:
         df = pd.read_csv(CSV_FILE)
         threats = df[df['threat_level'].isin(['CRITICAL', 'HIGH', 'MEDIUM'])]
-
         if len(threats) == 0:
             return {"success": True, "apps": []}
-
         apps = []
         threat_levels = {'CRITICAL': 3, 'HIGH': 2, 'MEDIUM': 1}
         for app_name in threats['app_name'].unique():
             app_events = threats[threats['app_name'] == app_name]
             permissions = sorted(app_events['permission_type'].unique().tolist())
             max_threat = max(app_events['threat_level'], key=lambda x: threat_levels.get(x, 0))
-
             apps.append({
                 'name': app_name,
                 'permissions': permissions,
                 'threat_level': max_threat
             })
-
         apps.sort(key=lambda x: threat_levels.get(x['threat_level'], 0), reverse=True)
         return {"success": True, "apps": apps}
     except Exception as e:
         return {"success": False, "error": str(e), "apps": []}
 
-# === ML API endpoint for DNS scoring ===
+# === ML API endpoint for DNS scoring (fix) ===
 @app.post("/api/check_dns")
-async def api_check_dns(event: dict):
+async def api_check_dns(request: Request):
     """
     Accept JSON: {"Entropy": float, "DomainLength": int, "StrangeCharacters": int, "SpecialCharRatio": float}
     """
+    event = await request.json()
     result = detect_dns_anomaly(event)
     return result
 
