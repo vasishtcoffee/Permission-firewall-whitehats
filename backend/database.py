@@ -7,8 +7,10 @@ import time
 import os
 from main import hybrid_threat_detection
 
-# CSV setup with NEW headers for hybrid system
-csv_file = 'permission_events.csv'
+# GET ABSOLUTE PATH (same as app.py)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+csv_file = os.path.join(BASE_DIR, 'permission_events.csv')
+
 headers = ['timestamp', 'app_name', 'permission_type', 'threat_level', 'reason', 'layers_triggered', 'hour']
 
 # Create CSV with headers if it doesn't exist
@@ -22,6 +24,7 @@ apps = ['Zoom', 'Chrome', 'Teams', 'Discord', 'Calculator', 'Notepad', 'cmd']
 permissions = ['camera', 'microphone', 'location', 'storage']
 
 print("🔒 Privacy Firewall Started")
+print(f"📁 Logging to: {csv_file}")  # ADD THIS - shows where CSV is
 
 while True:
     for proc in psutil.process_iter(['name']):
@@ -32,7 +35,6 @@ while True:
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 hour = datetime.now().hour
                 
-                # Use hybrid detection (returns: threat_level, reason, layers_triggered)
                 threat_level, reason, layers = hybrid_threat_detection(app_name, permission, hour)
                 
                 # Log to CSV
@@ -44,11 +46,11 @@ while True:
                         permission,
                         threat_level,
                         reason,
-                        ','.join(layers),  # Convert list to string
+                        ','.join(layers),
                         hour
                     ])
                 
-                # Console output with color coding
+                # Console output
                 if threat_level == "CRITICAL":
                     print(f"🔴 [CRITICAL] {app_name} → {permission}")
                     print(f"   {reason}")
