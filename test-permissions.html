@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Permission Test Suite</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    button { margin: 10px; padding: 10px 20px; font-size: 16px; }
+    .result { margin: 10px 0; padding: 10px; background: #f0f0f0; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Permission Test Suite</h1>
+  <div id="results"></div>
+  
+  <h2>Camera & Microphone</h2>
+  <button onclick="testCamera()">📷 Test Camera</button>
+  <button onclick="testMicrophone()">🎤 Test Microphone</button>
+  <button onclick="testBoth()">📷🎤 Test Both</button>
+  
+  <h2>Geolocation</h2>
+  <button onclick="testGeolocation()">📍 Test Location</button>
+  
+  <h2>Clipboard</h2>
+  <button onclick="testClipboardRead()">📋 Read Clipboard</button>
+  <button onclick="testClipboardWrite()">📝 Write Clipboard</button>
+  
+  <h2>File Access</h2>
+  <input type="file" id="fileInput" onchange="testFileAccess()">
+  <label for="fileInput">
+    <button onclick="document.getElementById('fileInput').click()">📁 Select File</button>
+  </label>
+  
+  <script>
+    function log(message, type = 'info') {
+      const div = document.createElement('div');
+      div.className = 'result';
+      div.style.borderLeft = `4px solid ${type === 'error' ? 'red' : type === 'success' ? 'green' : 'blue'}`;
+      div.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+      document.getElementById('results').prepend(div);
+    }
+    
+    async function testCamera() {
+      try {
+        log('Requesting camera...', 'info');
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        log('✅ Camera access granted!', 'success');
+        stream.getTracks().forEach(track => track.stop());
+      } catch (error) {
+        log(`❌ Camera denied: ${error.message}`, 'error');
+      }
+    }
+    
+    async function testMicrophone() {
+      try {
+        log('Requesting microphone...', 'info');
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        log('✅ Microphone access granted!', 'success');
+        stream.getTracks().forEach(track => track.stop());
+      } catch (error) {
+        log(`❌ Microphone denied: ${error.message}`, 'error');
+      }
+    }
+    
+    async function testBoth() {
+      try {
+        log('Requesting camera + microphone...', 'info');
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        log('✅ Camera + microphone granted!', 'success');
+        stream.getTracks().forEach(track => track.stop());
+      } catch (error) {
+        log(`❌ Both denied: ${error.message}`, 'error');
+      }
+    }
+    
+    function testGeolocation() {
+      log('Requesting geolocation...', 'info');
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          log(`✅ Location granted: ${position.coords.latitude}, ${position.coords.longitude}`, 'success');
+        },
+        (error) => {
+          log(`❌ Location denied: ${error.message}`, 'error');
+        }
+      );
+    }
+    
+    async function testClipboardRead() {
+      try {
+        log('Requesting clipboard read...', 'info');
+        const text = await navigator.clipboard.readText();
+        log(`✅ Clipboard read: "${text}"`, 'success');
+      } catch (error) {
+        log(`❌ Clipboard read denied: ${error.message}`, 'error');
+      }
+    }
+    
+    async function testClipboardWrite() {
+      try {
+        log('Requesting clipboard write...', 'info');
+        await navigator.clipboard.writeText('Test from Permission Watcher');
+        log('✅ Clipboard written!', 'success');
+      } catch (error) {
+        log(`❌ Clipboard write denied: ${error.message}`, 'error');
+      }
+    }
+    
+    function testFileAccess() {
+      const input = document.getElementById('fileInput');
+      if (input.files.length > 0) {
+        log(`📁 File selected: ${input.files[0].name}`, 'info');
+      }
+    }
+    
+    log('Test page loaded. Extension should intercept all permission requests.', 'info');
+  </script>
+</body>
+</html>
