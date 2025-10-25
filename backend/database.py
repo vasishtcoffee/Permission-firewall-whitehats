@@ -3,22 +3,29 @@ import psutil
 from datetime import datetime
 import random
 import time
+import os
 from main import predict_anomaly
+
 
 # Define the CSV file and header
 csv_file = 'permission_events.csv'
-headers = ['timestamp', 'app_name', 'permission_type', 'anomaly_flag']
+headers = ['timestamp', 'app_name', 'permission_type', 'anomaly_flag', 'hour']
 
-# Create the CSV file with headers (only once)
-with open(csv_file, mode='w', newline='') as file:
-    writer = csv.writer(file)
-    writer.writerow(headers)
+
+# Create the CSV file with headers ONLY if it doesn't exist
+if not os.path.isfile(csv_file):
+    with open(csv_file, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(headers)
+
 
 # List of simulated sensitive apps and permissions
 apps = ['Zoom', 'Chrome', 'Teams', 'Skype', 'Discord']
 permissions = ['camera', 'microphone', 'location']
 
+
 print("🔥 Privacy Firewall Started - Monitoring permissions...")
+
 
 # Monitor and log events
 while True:
@@ -36,7 +43,7 @@ while True:
                 # Record event in CSV with the actual anomaly prediction
                 with open(csv_file, mode='a', newline='') as file:
                     writer = csv.writer(file)
-                    writer.writerow([timestamp, app_name, permission, anomaly_flag])
+                    writer.writerow([timestamp, app_name, permission, anomaly_flag, hour])
                 
                 # Display result with color coding
                 if anomaly_flag == 1:
